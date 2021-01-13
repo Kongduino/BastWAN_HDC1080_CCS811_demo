@@ -35,18 +35,55 @@ void setup() {
   Serial.begin(115200);
   Serial.flush();
   delay(3000);
-  Serial.println("\n\nClosedCube HDC1080 Arduino Test");
+  Serial.println("\n\nClosedCube HDC1080 CCS811 Test");
   Wire.begin(SDA, SCL);
   Wire.setClock(100000);
   // Default settings:
   //  - Heater off
   //  - 14 bit Temperature and Humidity Measurement Resolutions
-  hdc1080.begin(0x40);
+  /*
+    typedef union {
+    uint8_t rawData;
+    struct {
+    uint8_t HumidityMeasurementResolution : 2;
+      00: 14 bit
+      01: 11 bit
+      10:  8 bit
+    uint8_t TemperatureMeasurementResolution : 1;
+      0: 14 bit
+      1: 11 bit
+    uint8_t BatteryStatus : 1;
+      0: Battery voltage > 2.8V (read only)
+      1: Battery voltage < 2.8V (read only)
+    uint8_t ModeOfAcquisition : 1;
+      0: Temp *or* RH
+      1: Both
+    uint8_t Heater : 1;
+      0: Disabled
+      1: Enabled
+    uint8_t ReservedAgain : 1;
+    uint8_t SoftwareReset : 1;
+      0: Normal Operation, this bit self clears
+      1: Software Reset
+    };
+    } HDC1080_Registers;
+    https://www.ti.com/lit/ds/symlink/hdc1080.pdf?ts=1610434595877&ref_url=https%253A%252F%252Fwww.google.com%252F
+  */
+  hdc1080.begin(0x40); // I2C address
   Serial.print("Manufacturer ID=0x");
   Serial.println(hdc1080.readManufacturerId(), HEX); // 0x5449 ID of Texas Instruments
   Serial.print("Device ID=0x");
   Serial.println(hdc1080.readDeviceId(), HEX); // 0x1050 ID of the device
   printSerialNumber();
+  HDC1080_Registers reg = hdc1080.readRegister();
+  Serial.print("Battery: 0x");
+  Serial.println(reg.BatteryStatus, HEX);
+  Serial.print("Heater: 0x");
+  Serial.println(reg.Heater, HEX);
+  Serial.print("HumidityMeasurementResolution: 0x");
+  Serial.println(reg.HumidityMeasurementResolution, HEX);
+  Serial.print("TemperatureMeasurementResolution: 0x");
+  Serial.println(reg.TemperatureMeasurementResolution, HEX);
 
   // This begins the CCS811 sensor and prints error status of .beginWithStatus()
   CCS811Core::CCS811_Status_e returnCode = myCCS811.beginWithStatus();
